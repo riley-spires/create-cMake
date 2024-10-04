@@ -8,9 +8,28 @@ import (
 	"slices"
 	"strings"
 	"os/exec"
+	"runtime"
+	"bufio"
 )
 
 func main() {
+	if _, err := os.Stat("CMakeLists.txt"); err == nil {
+		scanner := bufio.NewScanner(os.Stdin)
+
+		valid_options := []string{"yes", "no", "y", "n"}
+
+		for !slices.Contains(valid_options, strings.ToLower(scanner.Text())) {
+			fmt.Println("CMakeLists.txt already exists")
+			fmt.Print("Are you sure you want to override (yes|no): ")
+			scanner.Scan()
+		}
+
+		if strings.ToLower(scanner.Text()) == "n" || strings.ToLower(scanner.Text()) == "no" {
+			fmt.Fprintln(os.Stderr, "Aborting...")
+			return
+		}
+	}
+
 	required_args := []string{"project-name"}
 	project_name := ""
 	cmake_version := "3.29"
@@ -76,10 +95,31 @@ func main() {
 
 	flag.Parse()
 
+	if len(flag.Args()) == 0 {
+		fmt.Fprint(os.Stderr, "ERROR: Must provide at least one source file!\n")
+		return
+	}
+
+	for _, arg := range flag.Args() {
+		if _, err := os.Stat(arg); errors.Is(err, os.ErrNotExist) {
+			fmt.Fprintf(os.Stderr, "ERROR: source file %s does not exist!\n", arg)
+			return
+		}
+	}
+
+	fmt.Println("Attempting to create CMakeLists.txt with following config:")
+	fmt.Printf("Project Name: %s\n", project_name)
+	fmt.Printf("CMake Version: %s\n", cmake_version)
+	fmt.Printf("Cxx Version: %s\n", cxx_version)
+	fmt.Println("Source files:")
+	for _, arg := range flag.Args() {
+		fmt.Printf("\t%s\n", arg)
+	}
+
 	file, err := os.Create("./CMakeLists.txt")
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Could not create CMakeLists.txt -> %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "ERROR: Could not create CMakeLists.txt : %s\n", err.Error())
 	}
 
 	file.WriteString(fmt.Sprintf("cmake_minimum_required(VERSION %s)\n", cmake_version))
@@ -94,9 +134,30 @@ func main() {
 	file.WriteString("add_executable(${PROJECT_NAME} ${SOURCES})")
 	file.Close()
 
-	cmd := exec.Command("bash", "-c", "cmake . -B build")
+	fmt.Println("Created CMakeLists.txt")
+	
+	os_name := runtime.GOOS
+
+	fmt.Printf("%s OS detected. Attempting to build cmake config\n", os_name)
+
+	var cmd *exec.Cmd = nil
+
+	switch os_name {
+		case "linux":
+			cmd = exec.Command("bash", "-c", "cmake . -B build")
+			break
+	}
+
+	if cmd == nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s is an unsupported platform!\n", os_name)
+		fmt.Fprint(os.Stderr, "Please make a github issue or pull request!\n")
+		return
+	}
 
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Could not build cmake config : %s\n", err.Error())
+		return
 	}
+	
+	fmt.Println("Cmake config built. Build project with \"cmake --build build\"")
 }
