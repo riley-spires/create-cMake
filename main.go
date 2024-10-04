@@ -18,13 +18,16 @@ func main() {
 
 		valid_options := []string{"yes", "no", "y", "n"}
 
-		for !slices.Contains(valid_options, strings.ToLower(scanner.Text())) {
+		ans := strings.ToLower(scanner.Text())
+
+		for !slices.Contains(valid_options, ans) {
 			fmt.Println("CMakeLists.txt already exists")
 			fmt.Print("Are you sure you want to override (yes|no): ")
 			scanner.Scan()
+			ans = strings.ToLower(scanner.Text())
 		}
 
-		if strings.ToLower(scanner.Text()) == "n" || strings.ToLower(scanner.Text()) == "no" {
+		if ans == "n" || ans == "no" {
 			fmt.Fprintln(os.Stderr, "Aborting...")
 			return
 		}
