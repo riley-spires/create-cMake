@@ -152,8 +152,8 @@ func main() {
 	}
 
 	if cmd == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %s is an unsupported platform!\n", os_name)
-		fmt.Fprint(os.Stderr, "Please make a github issue or pull request!\n")
+		fmt.Fprintf(os.Stderr, "ERROR: \"%s\" is an unsupported platform!\n", os_name)
+		fmt.Fprint(os.Stderr, "Please make a github issue with your exact os as shown in quotes above or a pull request with your implementation!\n")
 		return
 	}
 
