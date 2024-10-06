@@ -37,6 +37,7 @@ This command will generate a CMakeLists.txt file for a project named "MyProject"
 
 Currently, the program supports automatic CMake configuration building on:
 - Linux
+- Windows
 
 For other platforms, please submit a GitHub issue or pull request with your implementation.
 
