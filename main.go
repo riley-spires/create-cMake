@@ -22,14 +22,14 @@ func main() {
 
 		for !slices.Contains(valid_options, ans) {
 			fmt.Println("CMakeLists.txt already exists")
-			fmt.Print("Are you sure you want to override (yes|no): ")
+			fmt.Print("Are you sure you want to override <(y)es|(n)o>: ")
 			scanner.Scan()
 			ans = strings.ToLower(scanner.Text())
 		}
 
 		if ans == "n" || ans == "no" {
 			fmt.Fprintln(os.Stderr, "Aborting...")
-			return
+			os.Exit(0)
 		}
 	}
 
@@ -43,7 +43,7 @@ func main() {
 	cxx_version := "11"
 	valid_cxx_versions := []string{"98", "03", "11", "14", "17", "20", "23", "26"}
 
-	flag.Func("project-name", "-project-name {name}", func(flag_val string) error {
+	flag.Func("project-name", "--project-name <name>", func(flag_val string) error {
 		if flag_val == "" {
 			return errors.New("project-name cannot be blank")
 		}
@@ -57,7 +57,7 @@ func main() {
 		return nil
 	})
 
-	flag.Func("cmake-version", "-cmake-version {3.20, 3.21, 3.22, 3.23, 3.24, 3.25, 3.26, 3.27, 3.28, 3.29, 3.30}", func(flag_val string) error {
+	flag.Func("cmake-version", "--cmake-version {3.20, 3.21, 3.22, 3.23, 3.24, 3.25, 3.26, 3.27, 3.28, [3.29], 3.30}", func(flag_val string) error {
 		if flag_val == "" {
 			return errors.New("cmake-version cannot be blank")
 		}
@@ -71,7 +71,7 @@ func main() {
 		return nil
 	})
 
-	flag.Func("cxx-version", "-cxx-version {98, 03, 11, 14, 17, 20, 23, 26}", func(flag_val string) error {
+	flag.Func("cxx-version", "--cxx-version {98, 03, [11], 14, 17, 20, 23, 26}", func(flag_val string) error {
 		if flag_val == "" {
 			return errors.New("cxx-version cannot be blank")
 		}
@@ -85,28 +85,37 @@ func main() {
 		return nil
 	})
 
+
 	for _, arg := range required_args {
 		found := false
 		for _, cmd_arg := range os.Args {
 			if strings.Contains(cmd_arg, arg) { found = true }
+
+			if strings.Contains(cmd_arg, "help") {
+				fmt.Print("USAGE:\n\n")
+				flag.PrintDefaults()
+
+				os.Exit(0)
+			}
 		}
 		if !found {
-			fmt.Fprintf(os.Stderr, "ERROR: must provide a value with --%s\n", arg)
-			return
+			fmt.Fprintf(os.Stderr, "ERROR: Must provide a value with --%s\n", arg)
+			fmt.Fprintln(os.Stderr, "       See \"create-cmake --help\" for more info!")
+			os.Exit(1)
 		}
 	}
 
 	flag.Parse()
-
+	
 	if len(flag.Args()) == 0 {
 		fmt.Fprint(os.Stderr, "ERROR: Must provide at least one source file!\n")
-		return
+		os.Exit(1)
 	}
 
 	for _, arg := range flag.Args() {
 		if _, err := os.Stat(arg); errors.Is(err, os.ErrNotExist) {
-			fmt.Fprintf(os.Stderr, "ERROR: source file %s does not exist!\n", arg)
-			return
+			fmt.Fprintf(os.Stderr, "ERROR: source file \"%s\" does not exist!\n", arg)
+			os.Exit(1)
 		}
 	}
 
@@ -148,18 +157,21 @@ func main() {
 	switch os_name {
 		case "linux":
 			cmd = exec.Command("bash", "-c", "cmake . -B build")
-			break
+		default:
+			fmt.Fprintf(os.Stderr, "ERROR: \"%s\" is an unsupported platform!\n", os_name)
+			fmt.Fprint(os.Stderr, "Please make a github issue with your exact os as shown in quotes above or a pull request with your implementation!\n")
+			os.Exit(1)
+
 	}
 
 	if cmd == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: \"%s\" is an unsupported platform!\n", os_name)
-		fmt.Fprint(os.Stderr, "Please make a github issue with your exact os as shown in quotes above or a pull request with your implementation!\n")
-		return
+		fmt.Fprintln(os.Stderr, "ERROR: Unreachable. How did you get here?")
+		os.Exit(-1)
 	}
 
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Could not build cmake config : %s\n", err.Error())
-		return
+		os.Exit(1)
 	}
 	
 	fmt.Println("Cmake config built. Build project with \"cmake --build build\"")
