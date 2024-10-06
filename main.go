@@ -157,6 +157,8 @@ func main() {
 	switch os_name {
 		case "linux":
 			cmd = exec.Command("bash", "-c", "cmake . -B build")
+		case "windows":
+			cmd = exec.Command("powershell.exe", "cmake . -B build")
 		default:
 			fmt.Fprintf(os.Stderr, "ERROR: \"%s\" is an unsupported platform!\n", os_name)
 			fmt.Fprint(os.Stderr, "Please make a github issue with your exact os as shown in quotes above or a pull request with your implementation!\n")
