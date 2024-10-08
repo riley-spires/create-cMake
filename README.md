@@ -9,6 +9,20 @@ This Go program generates a CMakeLists.txt file for C++ projects and sets up the
 - **Source File Validation**: Checks if specified source files exist before including them in the CMakeLists.txt.
 - **CMake Configuration**: Attempts to build the CMake configuration after generating the CMakeLists.txt file.
 
+#### Installation
+
+**From Binaries:**
+- Download the latest version to a preferred directory
+- Add preferred directory to your environment path
+
+**From Source:**
+- Download and install [GoLang](https://go.dev)
+- `git clone https://github.com/riley-spires/create-cmake.git`
+- `cd create-cmake`
+- `go build .`
+- `mv create-cmake <preferred_director>`
+- Add preferred directory to path
+
 #### Usage
 
 ```bash
